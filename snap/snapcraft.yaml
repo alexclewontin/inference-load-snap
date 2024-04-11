@@ -1,0 +1,80 @@
+name: inference-load-snap # you probably want to 'snapcraft register <name>'
+base: core22 # the base snap is the execution environment for this snap
+version: '0.1' # just for humans, typically '1.2+git' or '1.3.2'
+summary: Single-line elevator pitch for your amazing snap # 79 char long summary
+description: |
+  This is my-snap's description. You have a paragraph or two to tell the
+  most important story about your snap. Keep it under 100 words though,
+  we live in tweetspace and your description wants to look good in the snap
+  store.
+
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: strict
+
+architectures:
+  - build-on: [amd64, arm64]
+    build-for: [amd64]
+  - build-on: [amd64, arm64]
+    build-for: [arm64]
+
+parts:
+  k8s-orchestration:
+    source: ./
+    plugin: dump
+    stage-snaps: [ kubectl ]
+    organize:
+      kubectl: bin/kubectl
+    stage:
+      - launcher/*
+      - deploy/*
+      - bin/kubectl
+  yolov8n-pt:
+    build-packages: [ wget ]
+    override-pull: |
+      wget https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt
+    source: ./
+    plugin: dump
+  istio:
+    build-packages: [ wget ]
+    build-environment:
+      - ISTIO_VERSION: 1.17.2
+      - TARGET_ARCH: $CRAFT_ARCH_BUILD_FOR
+    override-pull: |
+      rm -rf downloadIstio istio-*
+      wget https://istio.io/downloadIstio
+      chmod 755 downloadIstio
+      ./downloadIstio
+    plugin: dump
+    source: ./
+    organize:
+      istio-*/bin/: .
+    stage: [ -downloadIstio ]
+  kserve:
+    build-packages: [ wget ]
+    build-environment:
+      - KSERVE_VERSION: v0.11.2
+    override-pull: |
+      rm -rf kserve*
+      wget https://github.com/kserve/kserve/releases/download/$KSERVE_VERSION/kserve.yaml
+      wget https://github.com/kserve/kserve/releases/download/$KSERVE_VERSION/kserve-runtimes.yaml
+    source: ./
+    plugin: dump
+    organize:
+      "*": deploy/
+
+apps:
+  deploy:
+    command: deploy/deploy.sh
+    plugs: [ network ]
+
+plugs:
+  k8s-credentials:
+    interface: content
+    content: microk8s
+    target: $SNAP/microk8s
+
+slots:
+  configuration:
+    interface: content
+    content: configuration
+    read: [ $SNAP/k8s-launch-config ]
