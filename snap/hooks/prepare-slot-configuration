@@ -1,0 +1,12 @@
+#!/bin/bash
+
+VM_PRIV_IP=$(hostname -I | awk '{print $1}')
+
+rm -rf $SNAP_COMMON/launch-config
+cp -r $SNAP/launch-config $SNAP_COMMON/launch-config
+
+if [[ ! -z $VM_PRIV_IP ]]; then
+    sed -i "s/##METALLB_ARGS##/$VM_PRIV_IP-$VM_PRIV_IP/g" $SNAP_COMMON/launch-config/launcher/configuration/content.yaml
+else
+    sed -i 's/##METALLB_ARGS##/0.0.0.0-0.0.0.0/g' $SNAP_COMMON/launch-config/launcher/configuration/content.yaml
+fi

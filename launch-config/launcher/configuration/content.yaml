@@ -2,3 +2,5 @@
 version: 0.1.0
 addons:
   - name: cert-manager
+  - name: metallb
+    args: [##METALLB_ARGS##]

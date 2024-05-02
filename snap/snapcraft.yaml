@@ -25,15 +25,9 @@ parts:
     organize:
       kubectl: bin/kubectl
     stage:
-      - launcher/*
+      - launch-config/*
       - deploy/*
       - bin/kubectl
-  yolov8n-pt:
-    build-packages: [ wget ]
-    override-pull: |
-      wget https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt
-    source: ./
-    plugin: dump
   istio:
     build-packages: [ wget ]
     build-environment:
@@ -48,7 +42,10 @@ parts:
     source: ./
     organize:
       istio-*/bin/: .
-    stage: [ -downloadIstio ]
+    stage:
+      - -downloadIstio
+      - -istio-*/samples
+      - -istio-*/manifests/examples
   kserve:
     build-packages: [ wget ]
     build-environment:
@@ -66,15 +63,17 @@ apps:
   deploy:
     command: deploy/deploy.sh
     plugs: [ network ]
+    daemon: oneshot
 
 plugs:
   k8s-credentials:
     interface: content
     content: microk8s
     target: $SNAP/microk8s
+    default-provider: microk8s
 
 slots:
   configuration:
     interface: content
     content: configuration
-    read: [ $SNAP/k8s-launch-config ]
+    read: [ $SNAP_COMMON/launch-config ]
