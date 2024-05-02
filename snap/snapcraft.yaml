@@ -73,7 +73,7 @@ plugs:
     default-provider: microk8s
 
 slots:
-  configuration:
+  k8s-launch-config:
     interface: content
     content: configuration
     read: [ $SNAP_COMMON/launch-config ]
